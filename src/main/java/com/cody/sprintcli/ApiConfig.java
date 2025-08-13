@@ -1,12 +1,12 @@
 package com.cody.sprintcli;
 
 public class ApiConfig {
-    private final Stirng baseUrl;
+    private final String baseUrl;
     private final int connectTimeoutMs;
     private final int readTimeoutMs;
 
     public ApiConfig() {
-        this.baseUrl = getenvOrDefulat("API_BASE_URL", "HTTP://localhost:8080");
+        this.baseUrl = getenvOrDefault("API_BASE_URL", "http://localhost:8080");
         this.connectTimeoutMs = parseIntEnv("API_CONNECT_TIMEOUT_MS", 5000);
         this.readTimeoutMs = parseIntEnv("API_READ_TIMEOUT_MS", 8000);
     }
@@ -18,7 +18,7 @@ public class ApiConfig {
         return connectTimeoutMs;
     }
     public int getReadTimeoutMs() {
-        return getReadTimeoutMs;
+        return readTimeoutMs;
     }
 
     private static String getenvOrDefault(String key, String def) {
