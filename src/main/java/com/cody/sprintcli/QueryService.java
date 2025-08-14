@@ -81,6 +81,54 @@ public class QueryService {
             return "Request failed: " + msg;
         }
     }
+    /** Q3: Airports used by an aircraft (formatted for CLI) */
+    public String airportsForAircraft(int aircraftId) {
+        try {
+            String json = client.getAirportsForAircraft(aircraftId);
+            List<Airport> airports = parseAirports(json);
+            if (airports.isEmpty()) {
+                return "No airports found for aircraft ID " + aircraftId + ".";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < airports.size(); i++) {
+                Airport a = airports.get(i);
+                sb.append(i + 1).append(") ")
+                        .append(a.getName() == null || a.getName().isBlank() ? "(unnamed)" : a.getName())
+                        .append(" (").append(a.getCode() == null || a.getCode().isBlank() ? "???" : a.getCode()).append(")")
+                        .append(" [id: ").append(a.getId()).append("]")
+                        .append('\n');
+            }
+            return sb.toString().trim();
+        } catch (java.io.IOException e) {
+            String msg = e.getMessage() == null ? "" : e.getMessage();
+            if (msg.contains("HTTP 404")) return "Aircraft not found (id " + aircraftId + ").";
+            return "Request failed: " + msg;
+        }
+    }
+    /** Q4: Airports used by a passenger (formatted for CLI) */
+    public String airportsForPassenger(int passengerId) {
+        try {
+            String json = client.getAirportsUsedByPassenger(passengerId);
+            List<Airport> airports = parseAirports(json);
+            if (airports.isEmpty()) {
+                return "No airports found for passenger ID " + passengerId + ".";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < airports.size(); i++) {
+                Airport a = airports.get(i);
+                sb.append(i + 1).append(") ")
+                        .append(a.getName() == null || a.getName().isBlank() ? "(unnamed)" : a.getName())
+                        .append(" (").append(a.getCode() == null || a.getCode().isBlank() ? "???" : a.getCode()).append(")")
+                        .append(" [id: ").append(a.getId()).append("]")
+                        .append('\n');
+            }
+            return sb.toString().trim();
+        } catch (java.io.IOException e) {
+            String msg = e.getMessage() == null ? "" : e.getMessage();
+            if (msg.contains("HTTP 404")) return "Passenger not found (id " + passengerId + ").";
+            return "Request failed: " + msg;
+        }
+    }
 
     // -------- helpers: airports --------
 

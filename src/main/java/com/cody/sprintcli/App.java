@@ -1,6 +1,5 @@
 package com.cody.sprintcli;
 
-import java.io.IOException;
 import java.util.Scanner;
 
 public class App {
@@ -28,13 +27,11 @@ public class App {
                     }
                     case 3 -> {
                         int aircraftId = readPositiveInt(scanner, "Enter Aircraft ID: ");
-                        System.out.println("Airports used by Aircraft ID " + aircraftId + ":");
-                        System.out.println(client.getAirportsForAircraft(aircraftId));
+                        System.out.println(service.airportsForAircraft(aircraftId));
                     }
                     case 4 -> {
                         int passengerId = readPositiveInt(scanner, "Enter Passenger ID: ");
-                        System.out.println("Airports used by Passenger ID " + passengerId + ":");
-                        System.out.println(client.getAirportsUsedByPassenger(passengerId));
+                        System.out.println(service.airportsForPassenger(passengerId));
                     }
                     case 5 -> {
                         System.out.println("Exiting... Goodbye!");
@@ -42,11 +39,11 @@ public class App {
                     }
                     default -> System.out.println("Invalid choice. Please enter a number between 1 and 5.");
                 }
-            } catch (IOException e) {
-                System.out.println("Request failed: " + e.getMessage());
+            } catch (RuntimeException e) {
+                System.out.println("Unexpected error: " + e.getMessage());
             }
 
-            System.out.println(); // spacing
+            System.out.println();
         }
 
         scanner.close();
@@ -55,10 +52,10 @@ public class App {
     private static int readInt(Scanner scanner, int min, int max) {
         while (!scanner.hasNextInt()) {
             System.out.print("Please enter a number " + min + "–" + max + ": ");
-            scanner.next(); // discard bad token
+            scanner.next();
         }
         int value = scanner.nextInt();
-        scanner.nextLine(); // consume newline
+        scanner.nextLine();
         while (value < min || value > max) {
             System.out.print("Please enter a number " + min + "–" + max + ": ");
             while (!scanner.hasNextInt()) {
@@ -75,10 +72,10 @@ public class App {
         System.out.print(prompt);
         while (!scanner.hasNextInt()) {
             System.out.print("Please enter a whole number: ");
-            scanner.next(); // discard bad token
+            scanner.next();
         }
         int value = scanner.nextInt();
-        scanner.nextLine(); // consume newline
+        scanner.nextLine();
         while (value <= 0) {
             System.out.print("ID must be positive. Try again: ");
             while (!scanner.hasNextInt()) {
