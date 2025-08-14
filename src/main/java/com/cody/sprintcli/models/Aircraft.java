@@ -2,38 +2,42 @@ package com.cody.sprintcli.models;
 
 public class Aircraft {
     private int id;
+    private String model;
     private String type;
-    private String airlineName;
-    private int numberOfPassengers;
+    private String registration;
 
-    // Constructor
-    public Aircraft(int id, String type, String airlineName, int numberOfPassengers) {
+    // Needed by Gson
+    public Aircraft() {}
+
+    public Aircraft(int id, String model, String type, String registration) {
         this.id = id;
+        this.model = model;
         this.type = type;
-        this.airlineName = airlineName;
-        this.numberOfPassengers = numberOfPassengers;
+        this.registration = registration;
     }
 
-    // Getters
     public int getId() {
         return id;
+    }
+
+    public String getModel() {
+        return model;
     }
 
     public String getType() {
         return type;
     }
 
-    public String getAirlineName() {
-        return airlineName;
+    public String getRegistration() {
+        return registration;
     }
 
-    public int getNumberOfPassengers() {
-        return numberOfPassengers;
-    }
-
-    // toString method for clean output
     @Override
     public String toString() {
-        return type + " (" + airlineName + ") - Capacity: " + numberOfPassengers;
+        String label = (model != null && !model.isBlank()) ? model
+                : (type != null && !type.isBlank()) ? type
+                : (registration != null && !registration.isBlank()) ? registration
+                : "(unnamed aircraft)";
+        return label + " [id: " + id + (registration != null && !registration.isBlank() ? ", tail: " + registration : "") + "]";
     }
 }

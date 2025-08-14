@@ -16,15 +16,14 @@ public class Airport {
     public int getId() {
         return id;
     }
-
     public String getName() {
         return name;
     }
-
     public String getCode() {
         return code;
     }
 
+    @Override
     public String toString() {
         return name + " (" + code + ")";
     }

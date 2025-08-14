@@ -1,63 +1,94 @@
 package com.cody.sprintcli;
 
+import java.io.IOException;
 import java.util.Scanner;
 
 public class App {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        boolean running = true;
+        ApiClient client = new ApiClient(new ApiConfig());
+        QueryService service = new QueryService(client);
 
+        boolean running = true;
         while (running) {
             printMenu();
-
             System.out.print("Enter your choice (1–5): ");
-            int choice = scanner.nextInt();
 
-            switch (choice) {
-                case 1:
-                    System.out.print("Enter City ID: ");
-                    int cityId = scanner.nextInt();
-                    System.out.println("Airports in City ID " + cityId + ":");
-                    System.out.println(ApiClient.getAirportsByCity(cityId));
-                    break;
+            int choice = readInt(scanner, 1, 5);
 
-                case 2:
-                    System.out.println("You chose to view aircraft flown by a passenger.");
-                    System.out.print("Enter Passenger ID: ");
-                    int passengerIdAircraft = scanner.nextInt();
-                    System.out.println("Aircraft flown by Passenger ID " + passengerIdAircraft + ":");
-                    System.out.println(ApiClient.getAircraftByPassenger(passengerIdAircraft));
-                    break;
-
-                case 3:
-                    System.out.println("You chose to view departure/arrival airports for an aircraft.");
-                    System.out.print("Enter Aircraft ID: ");
-                    int aircraftId = scanner.nextInt();
-                    System.out.println("Airports used by Aircraft ID " + aircraftId + ":");
-                    System.out.println(ApiClient.getAirportsForAircraft(aircraftId));
-                    break;
-
-                case 4:
-                    System.out.println("You chose to view airports used by a passenger.");
-                    System.out.print("Enter Passenger ID: ");
-                    int passengerIdAirport = scanner.nextInt();
-                    System.out.println("Airports used by Passenger ID " + passengerIdAirport + ":");
-                    System.out.println(ApiClient.getAirportsUsedByPassenger(passengerIdAirport));
-                    break;
-
-                case 5:
-                    System.out.println("Exiting... Goodbye!");
-                    running = false;
-                    break;
-
-                default:
-                    System.out.println("Invalid choice. Please enter a number between 1 and 5.");
+            try {
+                switch (choice) {
+                    case 1 -> {
+                        int cityId = readPositiveInt(scanner, "Enter City ID: ");
+                        System.out.println(service.airportsInCity(cityId));
+                    }
+                    case 2 -> {
+                        int passengerId = readPositiveInt(scanner, "Enter Passenger ID: ");
+                        System.out.println(service.aircraftForPassenger(passengerId));
+                    }
+                    case 3 -> {
+                        int aircraftId = readPositiveInt(scanner, "Enter Aircraft ID: ");
+                        System.out.println("Airports used by Aircraft ID " + aircraftId + ":");
+                        System.out.println(client.getAirportsForAircraft(aircraftId));
+                    }
+                    case 4 -> {
+                        int passengerId = readPositiveInt(scanner, "Enter Passenger ID: ");
+                        System.out.println("Airports used by Passenger ID " + passengerId + ":");
+                        System.out.println(client.getAirportsUsedByPassenger(passengerId));
+                    }
+                    case 5 -> {
+                        System.out.println("Exiting... Goodbye!");
+                        running = false;
+                    }
+                    default -> System.out.println("Invalid choice. Please enter a number between 1 and 5.");
+                }
+            } catch (IOException e) {
+                System.out.println("Request failed: " + e.getMessage());
             }
 
-            System.out.println(); // Add space between interactions
+            System.out.println(); // spacing
         }
 
         scanner.close();
+    }
+
+    private static int readInt(Scanner scanner, int min, int max) {
+        while (!scanner.hasNextInt()) {
+            System.out.print("Please enter a number " + min + "–" + max + ": ");
+            scanner.next(); // discard bad token
+        }
+        int value = scanner.nextInt();
+        scanner.nextLine(); // consume newline
+        while (value < min || value > max) {
+            System.out.print("Please enter a number " + min + "–" + max + ": ");
+            while (!scanner.hasNextInt()) {
+                System.out.print("Please enter a number " + min + "–" + max + ": ");
+                scanner.next();
+            }
+            value = scanner.nextInt();
+            scanner.nextLine();
+        }
+        return value;
+    }
+
+    private static int readPositiveInt(Scanner scanner, String prompt) {
+        System.out.print(prompt);
+        while (!scanner.hasNextInt()) {
+            System.out.print("Please enter a whole number: ");
+            scanner.next(); // discard bad token
+        }
+        int value = scanner.nextInt();
+        scanner.nextLine(); // consume newline
+        while (value <= 0) {
+            System.out.print("ID must be positive. Try again: ");
+            while (!scanner.hasNextInt()) {
+                System.out.print("Please enter a whole number: ");
+                scanner.next();
+            }
+            value = scanner.nextInt();
+            scanner.nextLine();
+        }
+        return value;
     }
 
     public static void printMenu() {
