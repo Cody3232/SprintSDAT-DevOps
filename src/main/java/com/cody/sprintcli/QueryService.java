@@ -2,7 +2,6 @@ package com.cody.sprintcli;
 
 import com.cody.sprintcli.models.Airport;
 import com.cody.sprintcli.models.Aircraft;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -37,15 +36,15 @@ public class QueryService {
             for (int i = 0; i < airports.size(); i++) {
                 Airport a = airports.get(i);
                 sb.append(i + 1).append(") ")
-                        .append(a.getName() == null ? "(unnamed)" : a.getName())
-                        .append(" (").append(a.getCode() == null ? "???" : a.getCode()).append(")")
+                        .append(a.getName() == null || a.getName().isBlank() ? "(unnamed)" : a.getName())
+                        .append(" (").append(a.getCode() == null || a.getCode().isBlank() ? "???" : a.getCode()).append(")")
                         .append(" [id: ").append(a.getId()).append("]")
                         .append('\n');
             }
             return sb.toString().trim();
         } catch (IOException e) {
             String msg = e.getMessage() == null ? "" : e.getMessage();
-            if (msg.contains("HTTP 404")) return "City not found (id " + cityId + ").";
+            if (msg.contains("404")) return "City not found (id " + cityId + ").";
             return "Request failed: " + msg;
         }
     }
@@ -77,7 +76,57 @@ public class QueryService {
             return sb.toString().trim();
         } catch (IOException e) {
             String msg = e.getMessage() == null ? "" : e.getMessage();
-            if (msg.contains("HTTP 404")) return "Passenger not found (id " + passengerId + ").";
+            if (msg.contains("404")) return "Passenger not found (id " + passengerId + ").";
+            return "Request failed: " + msg;
+        }
+    }
+
+    /** Q3: Airports used by an aircraft (formatted for CLI) */
+    public String airportsForAircraft(int aircraftId) {
+        try {
+            String json = client.getAirportsForAircraft(aircraftId);
+            List<Airport> airports = parseAirports(json);
+            if (airports.isEmpty()) {
+                return "No airports found for aircraft ID " + aircraftId + ".";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < airports.size(); i++) {
+                Airport a = airports.get(i);
+                sb.append(i + 1).append(") ")
+                        .append(a.getName() == null || a.getName().isBlank() ? "(unnamed)" : a.getName())
+                        .append(" (").append(a.getCode() == null || a.getCode().isBlank() ? "???" : a.getCode()).append(")")
+                        .append(" [id: ").append(a.getId()).append("]")
+                        .append('\n');
+            }
+            return sb.toString().trim();
+        } catch (IOException e) {
+            String msg = e.getMessage() == null ? "" : e.getMessage();
+            if (msg.contains("404")) return "Aircraft not found (id " + aircraftId + ").";
+            return "Request failed: " + msg;
+        }
+    }
+
+    /** Q4: Airports used by a passenger (formatted for CLI) */
+    public String airportsForPassenger(int passengerId) {
+        try {
+            String json = client.getAirportsUsedByPassenger(passengerId);
+            List<Airport> airports = parseAirports(json);
+            if (airports.isEmpty()) {
+                return "No airports found for passenger ID " + passengerId + ".";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < airports.size(); i++) {
+                Airport a = airports.get(i);
+                sb.append(i + 1).append(") ")
+                        .append(a.getName() == null || a.getName().isBlank() ? "(unnamed)" : a.getName())
+                        .append(" (").append(a.getCode() == null || a.getCode().isBlank() ? "???" : a.getCode()).append(")")
+                        .append(" [id: ").append(a.getId()).append("]")
+                        .append('\n');
+            }
+            return sb.toString().trim();
+        } catch (IOException e) {
+            String msg = e.getMessage() == null ? "" : e.getMessage();
+            if (msg.contains("404")) return "Passenger not found (id " + passengerId + ").";
             return "Request failed: " + msg;
         }
     }
@@ -88,12 +137,10 @@ public class QueryService {
         if (json == null || json.isBlank()) return List.of();
         JsonElement root = JsonParser.parseString(json);
 
-        // Case 1: plain array
         if (root.isJsonArray()) {
             return fromAirportArray(root.getAsJsonArray());
         }
 
-        // Case 2: object with a list under a known key (airports/data/content/items)
         if (root.isJsonObject()) {
             JsonObject obj = root.getAsJsonObject();
             for (String key : new String[]{"airports", "data", "content", "items"}) {
@@ -101,7 +148,6 @@ public class QueryService {
                     return fromAirportArray(obj.getAsJsonArray(key));
                 }
             }
-            // Case 3: a single airport object
             if (looksLikeAirport(obj)) {
                 Airport single = gson.fromJson(obj, Airport.class);
                 List<Airport> one = new ArrayList<>();
@@ -127,12 +173,10 @@ public class QueryService {
         if (json == null || json.isBlank()) return List.of();
         JsonElement root = JsonParser.parseString(json);
 
-        // plain array
         if (root.isJsonArray()) {
             return fromAircraftArray(root.getAsJsonArray());
         }
 
-        // wrapped array under common keys
         if (root.isJsonObject()) {
             JsonObject obj = root.getAsJsonObject();
             for (String key : new String[]{"aircraft", "airplanes", "data", "content", "items"}) {
@@ -140,7 +184,6 @@ public class QueryService {
                     return fromAircraftArray(obj.getAsJsonArray(key));
                 }
             }
-            // single object
             if (looksLikeAircraft(obj)) {
                 Aircraft single = gson.fromJson(obj, Aircraft.class);
                 List<Aircraft> one = new ArrayList<>();

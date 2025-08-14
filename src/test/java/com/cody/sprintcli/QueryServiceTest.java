@@ -90,4 +90,103 @@ public class QueryServiceTest {
 
         org.junit.jupiter.api.Assertions.assertEquals("No aircraft found for passenger ID 2.", out);
     }
+    @org.junit.jupiter.api.Test
+    void airportsForAircraft_formatsList_fromArrayJson() throws java.io.IOException {
+        com.cody.sprintcli.ApiClient client = org.mockito.Mockito.mock(com.cody.sprintcli.ApiClient.class);
+        com.cody.sprintcli.QueryService svc = new com.cody.sprintcli.QueryService(client);
+
+        int aircraftId = 123;
+        String json = """
+      [
+        {"id":1,"name":"Heathrow","code":"LHR"},
+        {"id":2,"name":"Gatwick","code":"LGW"}
+      ]
+      """;
+        org.mockito.Mockito.when(client.getAirportsForAircraft(aircraftId)).thenReturn(json);
+
+        String out = svc.airportsForAircraft(aircraftId);
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "1) Heathrow (LHR) [id: 1]\n2) Gatwick (LGW) [id: 2]",
+                out
+        );
+    }
+
+    @org.junit.jupiter.api.Test
+    void airportsForAircraft_handlesEmptyArray() throws java.io.IOException {
+        com.cody.sprintcli.ApiClient client = org.mockito.Mockito.mock(com.cody.sprintcli.ApiClient.class);
+        com.cody.sprintcli.QueryService svc = new com.cody.sprintcli.QueryService(client);
+
+        int aircraftId = 123;
+        org.mockito.Mockito.when(client.getAirportsForAircraft(aircraftId)).thenReturn("[]");
+
+        String out = svc.airportsForAircraft(aircraftId);
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "No airports found for aircraft ID 123.", out
+        );
+    }
+
+    @org.junit.jupiter.api.Test
+    void airportsForAircraft_handlesNotFound() throws java.io.IOException {
+        com.cody.sprintcli.ApiClient client = org.mockito.Mockito.mock(com.cody.sprintcli.ApiClient.class);
+        com.cody.sprintcli.QueryService svc = new com.cody.sprintcli.QueryService(client);
+
+        int aircraftId = 123;
+        org.mockito.Mockito.when(client.getAirportsForAircraft(aircraftId))
+                .thenThrow(new java.io.IOException("HTTP 404 Not Found"));
+
+        String out = svc.airportsForAircraft(aircraftId);
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Aircraft not found (id 123).", out
+        );
+    }
+    @org.junit.jupiter.api.Test
+    void airportsForPassenger_formatsList_fromArrayJson() throws java.io.IOException {
+        com.cody.sprintcli.ApiClient client = org.mockito.Mockito.mock(com.cody.sprintcli.ApiClient.class);
+        com.cody.sprintcli.QueryService svc = new com.cody.sprintcli.QueryService(client);
+
+        int passengerId = 7;
+        String json = """
+      [
+        {"id":10,"name":"Pearson","code":"YYZ"},
+        {"id":20,"name":"St. John's","code":"YYT"}
+      ]
+      """;
+        org.mockito.Mockito.when(client.getAirportsUsedByPassenger(passengerId)).thenReturn(json);
+
+        String out = svc.airportsForPassenger(passengerId);
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "1) Pearson (YYZ) [id: 10]\n2) St. John's (YYT) [id: 20]",
+                out
+        );
+    }
+
+    @org.junit.jupiter.api.Test
+    @org.junit.jupiter.api.DisplayName("airportsForPassenger returns friendly message on empty list")
+    void airportsForPassenger_handlesEmptyArray() throws java.io.IOException {
+        com.cody.sprintcli.ApiClient client = org.mockito.Mockito.mock(com.cody.sprintcli.ApiClient.class);
+        com.cody.sprintcli.QueryService svc = new com.cody.sprintcli.QueryService(client);
+
+        int passengerId = 7;
+        org.mockito.Mockito.when(client.getAirportsUsedByPassenger(passengerId)).thenReturn("[]");
+
+        String out = svc.airportsForPassenger(passengerId);
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "No airports found for passenger ID 7.", out
+        );
+    }
+
+    @org.junit.jupiter.api.Test
+    void airportsForPassenger_handlesNotFound() throws java.io.IOException {
+        com.cody.sprintcli.ApiClient client = org.mockito.Mockito.mock(com.cody.sprintcli.ApiClient.class);
+        com.cody.sprintcli.QueryService svc = new com.cody.sprintcli.QueryService(client);
+
+        int passengerId = 7;
+        org.mockito.Mockito.when(client.getAirportsUsedByPassenger(passengerId))
+                .thenThrow(new java.io.IOException("HTTP 404 Not Found"));
+
+        String out = svc.airportsForPassenger(passengerId);
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Passenger not found (id 7).", out
+        );
+    }
 }
