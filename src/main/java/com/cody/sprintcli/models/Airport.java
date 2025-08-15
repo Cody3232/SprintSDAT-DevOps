@@ -4,27 +4,15 @@ public class Airport {
     private int id;
     private String name;
     private String code;
+    private City city; // keep only a shallow city to avoid recursion
 
-    // Constructor
-    public Airport(int id, String name, String code) {
-        this.id = id;
-        this.name = name;
-        this.code = code;
-    }
-
-    // getters
-    public int getId() {
-        return id;
-    }
-    public String getName() {
-        return name;
-    }
-    public String getCode() {
-        return code;
-    }
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public String getCode() { return code; }
+    public City getCity() { return city; }
 
     @Override
     public String toString() {
-        return name + " (" + code + ")";
+        return name + " [" + code + "]" + (city != null ? " - " + city.getName() : "");
     }
 }

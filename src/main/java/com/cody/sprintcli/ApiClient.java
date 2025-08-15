@@ -1,89 +1,69 @@
 package com.cody.sprintcli;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class ApiClient {
-    private final ApiConfig config;
+    private final String baseUrl;
+    private final HttpClient http = HttpClient.newHttpClient();
 
     public ApiClient(ApiConfig config) {
-        this.config = config;
+        String cfg = (config != null && config.getBaseUrl() != null) ? config.getBaseUrl() : "";
+        // keep whatever the user gives, but strip trailing slashes
+        this.baseUrl = (cfg.isBlank() ? "http://localhost:8080" : cfg).replaceAll("/+$", "");
     }
 
-    /** Generic GET that all helpers use. Throws on non-2xx with status/snippet. */
-    public String get(String path, Map<String,String> queryParams) throws IOException {
-        URL url = buildUrl(path, queryParams);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Accept", "application/json");
-        conn.setConnectTimeout(config.getConnectTimeoutMs());
-        conn.setReadTimeout(config.getReadTimeoutMs());
+    // --- public endpoints (use safe joiner) ---
+    public String getAirportsByCity(int cityId) throws IOException {
+        return get(u("/api/airports/byCity/" + cityId));
+    }
 
-        int code = conn.getResponseCode();
-        InputStream stream = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
-        String body = readBody(stream);
-        conn.disconnect();
+    public String getAircraftByPassenger(int passengerId) throws IOException {
+        return get(u("/api/aircraft/byPassenger/" + passengerId));
+    }
 
-        if (code >= 200 && code < 300) {
-            return body == null ? "" : body;
-        } else {
-            String snippet = (body == null) ? "" : (body.length() > 300 ? body.substring(0, 300) + "..." : body);
-            throw new IOException("HTTP " + code + " GET " + url + (snippet.isEmpty() ? "" : " — " + snippet));
+    public String getAirportsForAircraft(int aircraftId) throws IOException {
+        return get(u("/api/airports/byAircraft/" + aircraftId));
+    }
+
+    public String getAirportsUsedByPassenger(int passengerId) throws IOException {
+        return get(u("/api/airports/byPassenger/" + passengerId));
+    }
+    public String getAircraftById(int aircraftId) throws IOException {
+        return get(baseUrl + "/api/aircraft/" + aircraftId);
+    }
+
+    // --- helpers ---
+    /** Safely join baseUrl + path, avoiding double "/api". */
+    private String u(String path) {
+        String root = baseUrl.replaceAll("/+$", "");
+        String p = path.startsWith("/") ? path : "/" + path;
+        if (root.endsWith("/api") && p.startsWith("/api/")) {
+            p = p.substring(4); // drop the leading "/api" from the path
         }
+        return root + p;
     }
 
-    private URL buildUrl(String path, Map<String,String> query) throws MalformedURLException {
-        String base = config.getBaseUrl();
-        StringBuilder sb = new StringBuilder();
-        if (base.endsWith("/") && path.startsWith("/")) {
-            sb.append(base, 0, base.length() - 1).append(path);
-        } else if (!base.endsWith("/") && !path.startsWith("/")) {
-            sb.append(base).append("/").append(path);
-        } else {
-            sb.append(base).append(path);
+    private String get(String url) throws IOException {
+        try {
+            System.out.println("DEBUG GET " + url);
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
+            HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString());
+            if (res.statusCode() == 404) throw new IOException("404 Not Found");
+            if (res.statusCode() >= 400) throw new IOException("HTTP " + res.statusCode());
+            return res.body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request interrupted", e);
+        } catch (IllegalArgumentException e) {
+            throw new IOException("Bad URL: " + url, e);
         }
-        if (query != null && !query.isEmpty()) {
-            sb.append('?').append(query.entrySet().stream()
-                    .map(e -> enc(e.getKey()) + "=" + enc(e.getValue()))
-                    .collect(Collectors.joining("&")));
-        }
-        return new URL(sb.toString());
-    }
-
-    private static String enc(String s) {
-        try { return URLEncoder.encode(s, StandardCharsets.UTF_8.toString()); }
-        catch (Exception e) { return s; }
-    }
-
-    private static String readBody(InputStream in) throws IOException {
-        if (in == null) return "";
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-            StringBuilder sb = new StringBuilder(); String line;
-            while ((line = br.readLine()) != null) sb.append(line);
-            return sb.toString();
-        }
-    }
-
-    // wrappers (instance methods, no hardcoded base URL)
-    public String getAirportsByCity(int cityId) throws java.io.IOException {
-        return get("/api/cities/" + cityId + "/airports", java.util.Map.of());
-    }
-    public String getAircraftByPassenger(int passengerId) throws java.io.IOException {
-        return get("/api/passengers/" + passengerId + "/aircraft", java.util.Map.of());
-    }
-    public String getAirportsUsedByPassenger(int passengerId) throws java.io.IOException {
-        return get("/api/passengers/" + passengerId + "/airports", java.util.Map.of());
-    }
-    public String getAirportsForAircraft(int aircraftId) throws java.io.IOException {
-        return get("/api/aircraft/" + aircraftId + "/airports", java.util.Map.of());
     }
 }

@@ -13,7 +13,6 @@ public class App {
         while (running) {
             printMenu();
             System.out.print("Enter your choice (1–5): ");
-
             int choice = readInt(scanner, 1, 5);
 
             try {
@@ -29,12 +28,12 @@ public class App {
                     case 3 -> {
                         int aircraftId = readPositiveInt(scanner, "Enter Aircraft ID: ");
                         System.out.println("Airports used by Aircraft ID " + aircraftId + ":");
-                        System.out.println(client.getAirportsForAircraft(aircraftId));
+                        System.out.println(service.airportsForAircraft(aircraftId));
                     }
                     case 4 -> {
                         int passengerId = readPositiveInt(scanner, "Enter Passenger ID: ");
                         System.out.println("Airports used by Passenger ID " + passengerId + ":");
-                        System.out.println(client.getAirportsUsedByPassenger(passengerId));
+                        System.out.println(service.airportsForPassenger(passengerId));
                     }
                     case 5 -> {
                         System.out.println("Exiting... Goodbye!");
@@ -42,10 +41,9 @@ public class App {
                     }
                     default -> System.out.println("Invalid choice. Please enter a number between 1 and 5.");
                 }
-            } catch (IOException e) {
+            } catch (RuntimeException e) {
                 System.out.println("Request failed: " + e.getMessage());
             }
-
             System.out.println(); // spacing
         }
 
